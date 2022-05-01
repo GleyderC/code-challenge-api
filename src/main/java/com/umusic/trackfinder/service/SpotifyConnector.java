@@ -50,7 +50,7 @@ public class SpotifyConnector {
             Response response = client.newCall(request).execute();
             ResponseBody responseBody = response.body();
 
-            LOG.trace("Spotify authentication response, status: {}, body: {} ", response.code());
+            LOG.trace("Spotify authentication response, status: {} ", response.code());
             if (response.code() == 400 || response.code() == 401) {
                 StringBuilder stringBuilder = new StringBuilder("Invalid credentials: ").append(responseBody != null ? responseBody.string() : response);
                 throw new SpotifyAuthenticationException(stringBuilder.toString());
@@ -63,8 +63,10 @@ public class SpotifyConnector {
                 this.httpClient = this.buildHttpClient();
             }
         } catch (SpotifyAuthenticationException spauthEx) {
+            LOG.error("Spotify Api authentication error ", spauthEx);
             throw spauthEx;
         } catch (Exception ex) {
+            LOG.error("Spotify  Api connection error ", ex);
             throw new SpotifyApiConnectionException(ex);
         }
     }
