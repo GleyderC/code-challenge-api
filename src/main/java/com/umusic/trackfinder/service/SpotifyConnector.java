@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 
-// TOKEN EXPIRED BQBW6twP6PkNiiXMFA5BGGJjm55n6cUKyi9DCEzomURxaeUvrq5gv92uem5L7lIscUWoAckLQ2rD9OMki6U
 public class SpotifyConnector {
     private static final Logger LOG = LoggerFactory.getLogger(SpotifyConnector.class);
     private final String API_URL = "https://api.spotify.com/v1/";

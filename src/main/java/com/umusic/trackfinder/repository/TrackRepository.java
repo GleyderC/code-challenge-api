@@ -11,4 +11,5 @@ import java.util.List;
 public interface TrackRepository extends CrudRepository<Track, String> {
 
     List<Track> findByIsrc(String isrc);
+    List<Track> findAll();
 }

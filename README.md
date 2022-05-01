@@ -18,7 +18,7 @@ This project is an API Rest code challenge.
 
 ## Success Response
 
-**Code** : `200 OK`
+**Code** : `200 OK`sh 
 
 **Content examples**
 

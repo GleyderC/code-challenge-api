@@ -3,6 +3,7 @@ package com.umusic.trackfinder.rest;
 import com.umusic.trackfinder.dto.ResponseDTO;
 import com.umusic.trackfinder.dto.TrackDTO;
 import com.umusic.trackfinder.exceptions.TrackAlreadyExistsException;
+import com.umusic.trackfinder.exceptions.TrackIsrcNotExistException;
 import com.umusic.trackfinder.service.TrackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/codechallenge")
+@RequestMapping("/codechallenge/tracks")
 public class TrackController {
 
     private TrackService trackService;
@@ -29,7 +30,23 @@ public class TrackController {
         this.trackService = trackService;
     }
 
-    @GetMapping(value = "/track/{isrc}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseDTO> tracksList() {
+        ResponseDTO responseDTO = new ResponseDTO<List<TrackDTO>>().setStatus(HttpStatus.OK.value());
+        try {
+            List<TrackDTO> trackList = trackService.findAll();
+
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(responseDTO.setStatus(HttpStatus.OK.value())
+                            .setData(trackList)
+                    );
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(responseDTO.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                            .setMessage("Error trying to get tracks from database" + ex.getMessage()));
+        }
+    }
+ @GetMapping(value = "/{isrc}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseDTO> getTrack(@PathVariable("isrc") String isrc) {
         ResponseDTO responseDTO = new ResponseDTO<List<TrackDTO>>().setStatus(HttpStatus.OK.value());
 
@@ -48,7 +65,7 @@ public class TrackController {
     }
 
 
-    @PostMapping("/track/{isrc}")
+    @PostMapping("/{isrc}")
     @ResponseStatus(HttpStatus.CREATED)
     @ResponseBody
     public ResponseEntity createTrack(@PathVariable("isrc") String isrc) {
@@ -62,6 +79,11 @@ public class TrackController {
                     .body(responseDTO
                             .setStatus(HttpStatus.BAD_REQUEST.value())
                             .setMessage("Track ".concat(isrc).concat(" Already exists")));
+        } catch (TrackIsrcNotExistException trackExistsException) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(responseDTO
+                            .setStatus(HttpStatus.NOT_FOUND.value())
+                            .setMessage("Track ".concat(isrc).concat(" Does not exist")));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(responseDTO

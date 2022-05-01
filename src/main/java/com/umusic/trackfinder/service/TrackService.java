@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.umusic.trackfinder.domain.Track;
 import com.umusic.trackfinder.dto.TrackDTO;
 import com.umusic.trackfinder.dto.spotify.TrackSpotifyDTO;
-import com.umusic.trackfinder.exceptions.SpotifyAuthenticationException;
 import com.umusic.trackfinder.exceptions.SpotifyApiConnectionException;
 import com.umusic.trackfinder.exceptions.SpotifyFormatResponseException;
 import com.umusic.trackfinder.exceptions.TrackAlreadyExistsException;
+import com.umusic.trackfinder.exceptions.TrackIsrcNotExistException;
 import com.umusic.trackfinder.repository.TrackRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,7 +35,7 @@ public class TrackService {
         this.spotifyConnector = connector;
     }
 
-    public TrackDTO createTrackByIsrc(String isrc) throws TrackAlreadyExistsException, Exception {
+    public TrackDTO createTrackByIsrc(String isrc) throws TrackAlreadyExistsException, TrackIsrcNotExistException, Exception {
         try {
             List<Track> trackList = trackRepository.findByIsrc(isrc);
             if (trackList.size() > 0) {
@@ -48,11 +48,17 @@ public class TrackService {
                 Track track = new Track(trackDTOS.get(0));
                 trackRepository.save(track);
                 return trackDTOS.get(0);
+            } else {
+                throw new TrackIsrcNotExistException();
             }
-            return null ;
-        } catch (Exception ex){
-            throw  ex;
+        } catch (Exception ex) {
+            throw ex;
         }
+    }
+
+    public List<TrackDTO> findAll() {
+        List<Track> tracks = trackRepository.findAll();
+        return tracks.stream().map(TrackDTO::new).collect(Collectors.toList());
     }
 
     public List<TrackDTO> findTrackByIsrc(String isrc) throws SpotifyFormatResponseException, SpotifyApiConnectionException {
@@ -75,12 +81,12 @@ public class TrackService {
         } catch (SpotifyApiConnectionException e) {
             LOG.error("Error connecting with spotify api", e);
             throw e;
-        } catch (JsonProcessingException e) {
-            throw new SpotifyFormatResponseException("Error reading and formatting response schema from spotify", e);
+        } catch (SpotifyFormatResponseException e) {
+            throw e;
         }
     }
 
-    private List<TrackSpotifyDTO> convertSpotifyResponseToDTO(String jsonString) throws JsonProcessingException {
+    private List<TrackSpotifyDTO> convertSpotifyResponseToDTO(String jsonString) throws SpotifyFormatResponseException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             JSONObject jsonObject = new JSONObject(jsonString);
@@ -89,7 +95,8 @@ public class TrackService {
             };
             return objectMapper.readValue(items.toString(), typeRef);
         } catch (JsonProcessingException e) {
-            throw e;
+            LOG.error("Error reading and formatting response schema from spotify", e);
+            throw new SpotifyFormatResponseException("Error reading and formatting response schema from spotify", e);
         }
     }
 
